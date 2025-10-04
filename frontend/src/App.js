@@ -24,6 +24,19 @@ function App() {
     };
   }, []);
 
+  const handleContentChange = (e) => {
+    const newContent = e.target.value;
+    setContent(newContent);
+    
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'edit',
+        content: newContent,
+        cursor: e.target.selectionStart
+      }));
+    }
+  };
+
   const connectToRoom = () => {
     if (!username.trim()) {
       alert('Please enter your name');
@@ -66,6 +79,12 @@ function App() {
         case 'user_left':
           setUsers(prev => prev.filter(u => u.id !== message.userId));
           console.log('User left');
+          break;
+          
+        case 'edit':
+          if (message.userId !== userIdRef.current) {
+            setContent(message.content);
+          }
           break;
           
         default:
@@ -178,8 +197,8 @@ function App() {
           
           <textarea
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Start typing... (sync coming in Phase 3)"
+            onChange={handleContentChange}
+            placeholder="Start typing... your changes will sync in real-time!"
             className="editor"
           />
         </div>

@@ -94,7 +94,19 @@ wss.on('connection', (ws) => {
             }
           }, ws);
           break;
-
+        case 'edit':
+          if (currentRoom) {
+            currentRoom.content = message.content;
+    
+            // Broadcast to all other users
+            broadcast(currentRoom.id, {
+              type: 'edit',
+              content: message.content,
+              userId: currentUser.id,
+              cursor: message.cursor
+            }, ws);
+          }
+          break;
         case 'ping':
           // Keep-alive ping
           ws.send(JSON.stringify({ type: 'pong' }));
