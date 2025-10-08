@@ -25,6 +25,7 @@ function getOrCreateRoom(roomId) {
       id: roomId,
       users: [],
       content: '',
+      comments: [],
       createdAt: Date.now()
     });
   }
@@ -77,6 +78,7 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({
             type: 'init',
             content: currentRoom.content,
+            comments: currentRoom.comments,
             users: currentRoom.users.map(u => ({
               id: u.id,
               name: u.name,
@@ -107,6 +109,48 @@ wss.on('connection', (ws) => {
             }, ws);
           }
           break;
+        case 'comment':
+          if (currentRoom) {
+            const comment = {
+              id: Date.now(),
+              author: currentUser.name,
+              text: message.text,
+              timestamp: new Date().toLocaleTimeString(),
+              color: currentUser.color
+            };
+            
+            currentRoom.comments.push(comment);
+            
+            // Broadcast to all users including sender
+            broadcast(currentRoom.id, {
+              type: 'comment',
+              comment: comment
+            });
+            
+            // Send to sender as well
+            ws.send(JSON.stringify({
+              type: 'comment',
+              comment: comment
+            }));
+          }
+          break;
+
+        case 'delete_comment':
+          if (currentRoom) {
+            currentRoom.comments = currentRoom.comments.filter(c => c.id !== message.commentId);
+            
+            broadcast(currentRoom.id, {
+              type: 'delete_comment',
+              commentId: message.commentId
+            });
+            
+            ws.send(JSON.stringify({
+              type: 'delete_comment',
+              commentId: message.commentId
+            }));
+          }
+          break;
+
         case 'ping':
           // Keep-alive ping
           ws.send(JSON.stringify({ type: 'pong' }));
