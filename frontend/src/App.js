@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Wifi, WifiOff } from 'lucide-react';
+import { Users, Wifi, WifiOff, MessageSquare } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -8,6 +8,9 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   const [content, setContent] = useState('');
   const [users, setUsers] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [showCommentBox, setShowCommentBox] = useState(false);
+  const [newComment, setNewComment] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   
   const wsRef = useRef(null);
@@ -33,6 +36,29 @@ function App() {
         type: 'edit',
         content: newContent,
         cursor: e.target.selectionStart
+      }));
+    }
+  };
+
+  const addComment = () => {
+    if (!newComment.trim()) return;
+
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'comment',
+        text: newComment
+      }));
+    }
+
+    setNewComment('');
+    setShowCommentBox(false);
+  };
+
+  const deleteComment = (id) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'delete_comment',
+        commentId: id
       }));
     }
   };
@@ -67,6 +93,7 @@ function App() {
       switch (message.type) {
         case 'init':
           setContent(message.content);
+          setComments(message.comments);
           setUsers(message.users);
           console.log('Initialized with room state');
           break;
@@ -85,6 +112,14 @@ function App() {
           if (message.userId !== userIdRef.current) {
             setContent(message.content);
           }
+          break;
+          
+        case 'comment':
+          setComments(prev => [...prev, message.comment]);
+          break;
+          
+        case 'delete_comment':
+          setComments(prev => prev.filter(c => c.id !== message.commentId));
           break;
           
         default:
@@ -193,6 +228,13 @@ function App() {
         <div className="editor-panel">
           <div className="panel-header">
             <h2>Document</h2>
+            <button
+              onClick={() => setShowCommentBox(!showCommentBox)}
+              className="comment-button"
+            >
+              <MessageSquare size={16} />
+              <span>Add Comment</span>
+            </button>
           </div>
           
           <textarea
@@ -201,6 +243,32 @@ function App() {
             placeholder="Start typing... your changes will sync in real-time!"
             className="editor"
           />
+          
+          {showCommentBox && (
+            <div className="comment-box">
+              <textarea
+                value={newComment}
+                onChange={(e) => setNewComment(e.target.value)}
+                placeholder="Write a comment..."
+                className="comment-input"
+                rows="3"
+              />
+              <div className="comment-actions">
+                <button
+                  onClick={() => setShowCommentBox(false)}
+                  className="cancel-button"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={addComment}
+                  className="post-button"
+                >
+                  Post Comment
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="sidebar">
@@ -218,6 +286,35 @@ function App() {
                   <span>{user.name}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className="panel">
+            <h3 className="comments-header">
+              <MessageSquare size={18} />
+              <span>Comments ({comments.length})</span>
+            </h3>
+            
+            <div className="comments-list">
+              {comments.length === 0 ? (
+                <p className="no-comments">No comments yet</p>
+              ) : (
+                comments.map((comment) => (
+                  <div key={comment.id} className="comment-item" style={{ borderLeftColor: comment.color }}>
+                    <div className="comment-header">
+                      <span className="comment-author">{comment.author}</span>
+                      <span className="comment-time">{comment.timestamp}</span>
+                      <button
+                        onClick={() => deleteComment(comment.id)}
+                        className="delete-button"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <p className="comment-text">{comment.text}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
