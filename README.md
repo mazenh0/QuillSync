@@ -45,55 +45,61 @@ git clone https://github.com/mazenh0/QuillSync.git
 cd QuillSync
 ```
 
-2. Install dependencies:
+2. Install backend dependencies:
 ```bash
+cd backend
 npm install
-# or
-yarn install
 ```
 
-3. Set up environment variables:
+3. Install frontend dependencies:
 ```bash
+cd ../frontend
+npm install
+```
+
+4. Set up environment variables:
+   
+**Backend:** Create a `.env` file in the `backend/` directory
+```bash
+cd backend
 cp .env.example .env
 ```
-Edit `.env` and add your configuration values.
 
-4. Start the development server:
+**Frontend:** Edit the `.env` file in the `frontend/` directory with your configuration.
 
-**Web:**
+5. Start the development servers:
+
+**Backend (Terminal 1):**
 ```bash
-npm run dev
-# or
-yarn dev
+cd backend
+node server.js
 ```
 
-**Mobile (React Native):**
+**Frontend (Terminal 2):**
 ```bash
-# iOS
-npm run ios
-# or
-yarn ios
-
-# Android
-npm run android
-# or
-yarn android
+cd frontend
+npm start
 ```
+
+The frontend will run on `http://localhost:3000` and the backend on `http://localhost:8080` (or your configured port).
 
 ## Project Structure
 
 ```
 QuillSync/
-├── src/
-│   ├── components/      # Reusable UI components
-│   ├── pages/          # Page components
-│   ├── services/       # API and service functions
-│   ├── utils/          # Helper functions
-│   └── config/         # Configuration files
-├── server/             # Backend server code
-├── mobile/             # React Native mobile app
-├── public/             # Static assets
-└── tests/              # Test files
+├── frontend/           # React frontend application
+│   ├── src/           # Source files
+│   │   ├── App.js     # Main application component
+│   │   ├── App.css    # Application styles
+│   │   └── index.js   # Entry point
+│   ├── public/        # Static assets
+│   ├── package.json   # Frontend dependencies
+│   └── .env           # Frontend environment variables
+├── backend/           # Node.js backend server
+│   ├── server.js      # Express server and Socket.io setup
+│   └── package.json   # Backend dependencies
+├── .gitignore         # Git ignore rules
+└── README.md          # Project documentation
 ```
 
 ## Usage
@@ -105,11 +111,11 @@ QuillSync/
 
 ## Configuration
 
-Create a `.env` file in the root directory with the following variables:
+**Backend `.env` file** (create in `backend/` directory):
 
 ```env
 # Server
-PORT=3000
+PORT=8080
 NODE_ENV=development
 
 # Database
@@ -122,6 +128,13 @@ FIREBASE_PROJECT_ID=your_project_id
 
 # WebSocket
 WS_PORT=8080
+```
+
+**Frontend `.env` file** (already exists in `frontend/` directory):
+
+```env
+REACT_APP_BACKEND_URL=http://localhost:8080
+REACT_APP_WS_URL=ws://localhost:8080
 ```
 
 ## API Documentation
